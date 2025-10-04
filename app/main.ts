@@ -4,11 +4,8 @@ console.log("Logs from your program will appear here!");
 
 // Uncomment this block to pass the first stage
 const server: net.Server = net.createServer((socket: net.Socket) => {
-  socket.on('data', (data) => {
-    const msg = data.toString();
-    if (msg === 'PING') {
-      socket.write('+PONG\r\n')
-    }
+  socket.on('data', () => {
+    socket.write('+PONG\r\n')
   })
 });
 
