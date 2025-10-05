@@ -61,8 +61,6 @@ export class RESPDecoder {
         }
         const commandType = arrayData[0].data.toLowerCase();
 
-        console.log(commandType)
-
         switch (commandType) {
           case RESPCommandType.PING: {
             commands.push(new pingRESPCommand())
@@ -77,25 +75,23 @@ export class RESPDecoder {
             break;
           }
           case RESPCommandType.SET: {
-            const key = arrayData[1].data;
-            const value = arrayData[2].data;
-            const option = arrayData[3]?.data;
+            const [_, rawKey, rawValue, rawOption, rawModifier] = arrayData;
+            const key = rawKey?.data;
+            const value = rawValue?.data;
+            const option = rawOption?.data?.toLowerCase();
 
             if (key === null || value === null) {
               break;
             }
+
             const setOptions: setRespCommandOptions = {};
 
-            console.log('f');
-
-            if (option && option.toLowerCase() === setRespCommandOptionsEnum.PX) {
-              const msDelay = parseInt(arrayData[4]?.data);
-
-              setOptions.expiry = Date.now() + msDelay;
-
+            if (option === setRespCommandOptionsEnum.PX) {
+              const msDelay = parseInt(rawModifier?.data);
+              if (!isNaN(msDelay)) {
+                setOptions.expiry = Date.now() + msDelay;
+              }
             }
-
-            console.log(setOptions);
 
             commands.push(new setRESPCommand(key, value, setOptions))
             break;
@@ -117,7 +113,6 @@ export class RESPDecoder {
   }
 
   private parseNextRESPObject(): RESPObject<any> {
-
     const type = this.advance(1);
 
 

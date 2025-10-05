@@ -49,6 +49,10 @@ export class RESPBulkString extends RESPObject<string | null> {
 }
 
 export class RESPInteger extends RESPObject<number> {
+  public static encodeAsInteger(input: number) {
+    return `:${input}${crlf}`
+  }
+
 
   constructor(data: number) {
     super(RESPObjectType.INTEGER, data)
@@ -71,12 +75,13 @@ export enum RESPCommandType {
   ECHO = 'echo',
   SET = 'set',
   GET = 'get',
+  RPUSH = 'rpush',
 }
 
 export interface CommandContext {
   connection: net.Socket;
   //                  value,      expiry
-  store: Map<string, [string, number | undefined]>;
+  store: Map<string, [any, number | undefined]>;
 }
 
 export abstract class RESPCommand {
@@ -175,6 +180,33 @@ export class getRESPCommand extends RESPCommand {
     }
 
     connection.write(RESPSimpleString.encodeAsSimpleString(value))
+  }
+}
+
+export class rpushRESPCommand extends RESPCommand {
+  private key: string;
+  private value: any;
+
+  constructor(_key: string, _value: string) {
+    super(RESPCommandType.RPUSH);
+    this.key = _key;
+    this.value = _value;
+  }
+
+  public execute(context: CommandContext): void {
+    const existingList = context.store.get(this.key);
+
+    if (existingList === undefined) {
+      context.store.set(this.key, [[this.value], undefined])
+      context.connection.write(RESPInteger.encodeAsInteger(1));
+      return;
+    }
+
+    if (Array.isArray(!existingList)) {
+      return;
+    }
+
+
   }
 }
 
