@@ -1,10 +1,18 @@
 import * as net from "net";
+import { RESPDecoder } from "./RESP/decoder.ts";
 
-console.log("Logs from your program will appear here!");
 
 const server: net.Server = net.createServer((socket: net.Socket) => {
-  socket.on('data', () => {
-    socket.write('+PONG\r\n')
+  socket.on('data', (data) => {
+    const respDecoder = new RESPDecoder(data.toString());
+
+
+    const commands = respDecoder.decode();
+
+    for (const command of commands) {
+      command.execute(socket)
+    }
+
   })
 });
 
