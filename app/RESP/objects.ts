@@ -206,7 +206,10 @@ export class rpushRESPCommand extends RESPCommand {
       return;
     }
 
+    const newList = [...existingList, this.value];
 
+    context.store.set(this.key, [newList, undefined])
+    context.connection.write(RESPInteger.encodeAsInteger(newList.length));
   }
 }
 
