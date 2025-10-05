@@ -1,5 +1,5 @@
 import { crlf } from "./util.ts";
-import { echoRESPCommand, getRESPCommand, pingRESPCommand, RESPArray, RESPBulkString, RESPCommandType, RESPDecoderError, RESPEmptyInputError, RESPExpectingIntegerError, RESPInteger, RESPObject, RESPSimpleString, RESPUnknownTypeError, setRESPCommand } from "./objects.ts";
+import { echoRESPCommand, getRESPCommand, pingRESPCommand, RESPArray, RESPBulkString, RESPCommandType, RESPDecoderError, RESPEmptyInputError, RESPExpectingIntegerError, RESPInteger, RESPObject, RESPSimpleString, RESPUnknownTypeError, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions } from "./objects.ts";
 import { RESPCommand } from "./objects.ts";
 
 export class RESPDecoder {
@@ -61,6 +61,8 @@ export class RESPDecoder {
         }
         const commandType = arrayData[0].data.toLowerCase();
 
+        console.log(commandType)
+
         switch (commandType) {
           case RESPCommandType.PING: {
             commands.push(new pingRESPCommand())
@@ -77,10 +79,25 @@ export class RESPDecoder {
           case RESPCommandType.SET: {
             const key = arrayData[1].data;
             const value = arrayData[2].data;
+            const option = arrayData[3]?.data;
+
             if (key === null || value === null) {
               break;
             }
-            commands.push(new setRESPCommand(key, value))
+            const setOptions: setRespCommandOptions = {};
+
+            console.log('f');
+
+            if (option && option.toLowerCase() === setRespCommandOptionsEnum.PX) {
+              const msDelay = parseInt(arrayData[4]?.data);
+
+              setOptions.expiry = Date.now() + msDelay;
+
+            }
+
+            console.log(setOptions);
+
+            commands.push(new setRESPCommand(key, value, setOptions))
             break;
           }
           case RESPCommandType.GET: {

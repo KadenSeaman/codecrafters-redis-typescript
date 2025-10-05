@@ -75,7 +75,8 @@ export enum RESPCommandType {
 
 export interface CommandContext {
   connection: net.Socket;
-  store: Map<string, string>;
+  //                  value,      expiry
+  store: Map<string, [string, number | undefined]>;
 }
 
 export abstract class RESPCommand {
@@ -114,19 +115,31 @@ export class echoRESPCommand extends RESPCommand {
   }
 }
 
+export type setRespCommandOptions = {
+  expiry?: number
+}
+
+export enum setRespCommandOptionsEnum {
+  PX = 'px',
+}
+
 export class setRESPCommand extends RESPCommand {
   private key: string;
   private value: string;
+  private expiry: number | undefined = undefined;
 
-  constructor(key: string, value: string) {
+  constructor(key: string, value: string, options: setRespCommandOptions = {}) {
     super(RESPCommandType.SET);
     this.key = key;
     this.value = value;
+    if (options.expiry) {
+      this.expiry = options.expiry;
+    }
   }
 
   public execute(context: CommandContext): void {
     const { connection, store } = context;
-    store.set(this.key, this.value);
+    store.set(this.key, [this.value, this.expiry]);
     connection.write(RESPSimpleString.encodeAsSimpleString('OK'))
   }
 }
@@ -142,12 +155,25 @@ export class getRESPCommand extends RESPCommand {
   public execute(context: CommandContext): void {
     const { connection, store } = context;
 
-    const value = store.get(this.key);
+    const result = store.get(this.key);
+    if (!result) {
+      connection.write(RESPBulkString.encodeAsBulkString(''));
+      return;
+    }
+
+    const [value, expiry] = result
 
     if (value === undefined) {
       connection.write(RESPBulkString.encodeAsBulkString(''));
       return;
     }
+
+    if (expiry && Date.now() > expiry) {
+      store.delete(this.key);
+      connection.write(RESPBulkString.encodeAsBulkString(''));
+      return;
+    }
+
     connection.write(RESPSimpleString.encodeAsSimpleString(value))
   }
 }
