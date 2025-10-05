@@ -1,5 +1,5 @@
 import { crlf } from "./util.ts";
-import { EchoRESPCommand, PINGRESPCommand, RESPArray, RESPBulkString, RESPCommandType, RESPDecoderError, RESPEmptyInputError, RESPExpectingIntegerError, RESPInteger, RESPObject, RESPSimpleString, RESPUnknownTypeError } from "./objects.ts";
+import { echoRESPCommand, getRESPCommand, pingRESPCommand, RESPArray, RESPBulkString, RESPCommandType, RESPDecoderError, RESPEmptyInputError, RESPExpectingIntegerError, RESPInteger, RESPObject, RESPSimpleString, RESPUnknownTypeError, setRESPCommand } from "./objects.ts";
 import { RESPCommand } from "./objects.ts";
 
 export class RESPDecoder {
@@ -54,33 +54,43 @@ export class RESPDecoder {
         return commands;
       }
       if (object instanceof RESPArray) {
+        const arrayData = object.data;
 
-
-        const data = object.data;
-
-        if (data === null) {
+        if (arrayData === null) {
           return commands;
         }
+        const commandType = arrayData[0].data.toLowerCase();
 
-        if (data.length === 1) {
-          if (data[0] instanceof RESPBulkString) {
-            if (data[0].data?.toLowerCase() === RESPCommandType.PING) {
-              commands.push(new PINGRESPCommand())
-            }
+        switch (commandType) {
+          case RESPCommandType.PING: {
+            commands.push(new pingRESPCommand())
+            break;
           }
-        }
-        if (data.length === 2) {
-          if (data[0] instanceof RESPBulkString) {
-            if (data[0].data?.toLowerCase() === RESPCommandType.ECHO) {
-
-
-              const response = data[1];
-              if (response instanceof RESPBulkString) {
-                if (response.data !== null) {
-                  commands.push(new EchoRESPCommand(response.data))
-                }
-              }
+          case RESPCommandType.ECHO: {
+            const echoValue = arrayData[1].data;
+            if (echoValue === null) {
+              break;
             }
+            commands.push(new echoRESPCommand(echoValue))
+            break;
+          }
+          case RESPCommandType.SET: {
+            const key = arrayData[1].data;
+            const value = arrayData[2].data;
+            if (key === null || value === null) {
+              break;
+            }
+            commands.push(new setRESPCommand(key, value))
+            break;
+          }
+          case RESPCommandType.GET: {
+            const key = arrayData[1].data;
+
+            if (key === null) {
+              break;
+            }
+            commands.push(new getRESPCommand(key))
+            break
           }
         }
       }
@@ -89,7 +99,7 @@ export class RESPDecoder {
     return commands;
   }
 
-  private parseNextRESPObject(): RESPObject {
+  private parseNextRESPObject(): RESPObject<any> {
 
     const type = this.advance(1);
 
@@ -162,7 +172,7 @@ export class RESPDecoder {
 
     this.advanceCRLF();
 
-    const respObjectArray: RESPObject[] = []
+    const respObjectArray: RESPObject<any>[] = []
 
     for (let i = 0; i < arrayLength; i++) {
       respObjectArray.push(this.parseNextRESPObject())

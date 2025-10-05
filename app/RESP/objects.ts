@@ -14,54 +14,51 @@ export enum RESPObjectType {
   COMMAND = 'command',
 }
 
-export abstract class RESPObject {
+export abstract class RESPObject<T> {
   public type: RESPObjectType;
+  public data: T;
 
-  constructor(type: RESPObjectType) {
+  constructor(type: RESPObjectType, data: T) {
     this.type = type;
+    this.data = data;
   }
 }
 
-export class RESPSimpleString extends RESPObject {
+export class RESPSimpleString extends RESPObject<string> {
   public static encodeAsSimpleString(input: string) {
     return '+' + input + crlf;
   }
 
-  public data: string;
-
   constructor(data: string) {
-    super(RESPObjectType.SIMPLE_STRING)
-    this.data = data;
+    super(RESPObjectType.SIMPLE_STRING, data)
   }
 }
 
-export class RESPBulkString extends RESPObject {
+export class RESPBulkString extends RESPObject<string | null> {
   public static encodeAsBulkString(input: string) {
+    if (input.length === 0) {
+      return '$-1' + crlf;
+    }
+
     return '$' + input.length.toString() + crlf + input + crlf;
   }
 
-  public data: string | null;
-
   constructor(data: string | null) {
-    super(RESPObjectType.BULK_STRING)
-    this.data = data;
+    super(RESPObjectType.BULK_STRING, data)
   }
 }
 
-export class RESPInteger extends RESPObject {
-  public data: number;
+export class RESPInteger extends RESPObject<number> {
 
   constructor(data: number) {
-    super(RESPObjectType.INTEGER)
-    this.data = data
+    super(RESPObjectType.INTEGER, data)
   }
 }
 
-export class RESPArray extends RESPObject {
-  public data: RESPObject[] | null;
+export class RESPArray extends RESPObject<RESPObject<any>[] | null> {
 
-  constructor(data: RESPObject[] | null) {
-    super(RESPObjectType.ARRAY);
+  constructor(data: RESPObject<any>[] | null) {
+    super(RESPObjectType.ARRAY, data);
     this.data = data;
   }
 }
@@ -76,6 +73,11 @@ export enum RESPCommandType {
   GET = 'get',
 }
 
+export interface CommandContext {
+  connection: net.Socket;
+  store: Map<string, string>;
+}
+
 export abstract class RESPCommand {
   public commandType: RESPCommandType;
 
@@ -83,20 +85,21 @@ export abstract class RESPCommand {
     this.commandType = commandType;
   }
 
-  public abstract execute(connection: net.Socket): void
+  public abstract execute(context: CommandContext): void
 }
 
-export class PINGRESPCommand extends RESPCommand {
+export class pingRESPCommand extends RESPCommand {
   constructor() {
     super(RESPCommandType.PING);
   }
 
-  public execute(connection: net.Socket): void {
+  public execute(context: CommandContext): void {
+    const { connection } = context;
     connection.write(RESPSimpleString.encodeAsSimpleString('PONG'))
   }
 }
 
-export class EchoRESPCommand extends RESPCommand {
+export class echoRESPCommand extends RESPCommand {
   private value: string;
 
   constructor(value: string) {
@@ -104,8 +107,48 @@ export class EchoRESPCommand extends RESPCommand {
     this.value = value;
   }
 
-  public execute(connection: net.Socket): void {
+  public execute(context: CommandContext): void {
+
+    const { connection } = context;
     connection.write(RESPBulkString.encodeAsBulkString(this.value));
+  }
+}
+
+export class setRESPCommand extends RESPCommand {
+  private key: string;
+  private value: string;
+
+  constructor(key: string, value: string) {
+    super(RESPCommandType.SET);
+    this.key = key;
+    this.value = value;
+  }
+
+  public execute(context: CommandContext): void {
+    const { connection, store } = context;
+    store.set(this.key, this.value);
+    connection.write(RESPSimpleString.encodeAsSimpleString('OK'))
+  }
+}
+
+export class getRESPCommand extends RESPCommand {
+  private key: string;
+
+  constructor(_key: string) {
+    super(RESPCommandType.GET);
+    this.key = _key;
+  }
+
+  public execute(context: CommandContext): void {
+    const { connection, store } = context;
+
+    const value = store.get(this.key);
+
+    if (value === undefined) {
+      connection.write(RESPBulkString.encodeAsBulkString(''));
+      return;
+    }
+    connection.write(RESPSimpleString.encodeAsSimpleString(value))
   }
 }
 
@@ -121,13 +164,11 @@ export enum RESPDecoderErrorType {
   UNKNOWN_COMMAND = 'unlknown_command',
 }
 
-export abstract class RESPDecoderError extends RESPObject {
-  public message: string;
+export abstract class RESPDecoderError extends RESPObject<string> {
   public errorType: RESPDecoderErrorType;
 
   constructor(errorType: RESPDecoderErrorType, errorMessage: string) {
-    super(RESPObjectType.SIMPLE_ERROR)
-    this.message = errorMessage;
+    super(RESPObjectType.SIMPLE_ERROR, errorMessage)
     this.errorType = errorType
   }
 }
