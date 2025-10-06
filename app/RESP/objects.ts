@@ -194,20 +194,18 @@ export class rpushRESPCommand extends RESPCommand {
   }
 
   public execute(context: CommandContext): void {
-    const existingList = context.store.get(this.key);
-
-    if (existingList === undefined) {
+    const entry = context.store.get(this.key);
+    if (entry === undefined) {
       context.store.set(this.key, [[this.value], undefined])
       context.connection.write(RESPInteger.encodeAsInteger(1));
       return;
     }
 
+    const existingList = entry[0];
     if (Array.isArray(!existingList)) {
       return;
     }
-
     const newList = [...existingList, this.value];
-
     context.store.set(this.key, [newList, undefined])
     context.connection.write(RESPInteger.encodeAsInteger(newList.length));
   }
