@@ -40,6 +40,8 @@ export class RESPBulkString extends RESPObject<string | null> {
       return '$-1' + crlf;
     }
 
+    console.log(input);
+
     return '$' + input.length.toString() + crlf + input + crlf;
   }
 
@@ -60,6 +62,10 @@ export class RESPInteger extends RESPObject<number> {
 }
 
 export class RESPArray extends RESPObject<RESPObject<any>[] | null> {
+  public static encodeAsArray(input: string[]) {
+    console.log(input);
+    return `*${input.length}${crlf}${input.map(val => RESPBulkString.encodeAsBulkString(val)).join('')}`;
+  }
 
   constructor(data: RESPObject<any>[] | null) {
     super(RESPObjectType.ARRAY, data);
@@ -76,6 +82,7 @@ export enum RESPCommandType {
   SET = 'set',
   GET = 'get',
   RPUSH = 'rpush',
+  LRANGE = 'lrange',
 }
 
 export interface CommandContext {
@@ -211,11 +218,59 @@ export class rpushRESPCommand extends RESPCommand {
   }
 }
 
+export class lrangeRESPCommand extends RESPCommand {
+  private key: string;
+  private startIndex: number;
+  private endIndex: number;
+
+  constructor(_key: string, _startIndex: number, _endIndex: number) {
+    super(RESPCommandType.LRANGE);
+    this.key = _key;
+    this.startIndex = _startIndex;
+    this.endIndex = _endIndex
+  }
+
+  public execute(context: CommandContext): void {
+    const writeEmptyArray = () => {
+      context.connection.write(RESPArray.encodeAsArray([]));
+    }
+
+    const entry = context.store.get(this.key);
+
+    if (entry === undefined) {
+      writeEmptyArray()
+      return;
+    }
+
+    const valueArray = entry[0];
+
+    if (!valueArray) {
+      writeEmptyArray()
+      return;
+    }
+
+    if (this.startIndex > this.endIndex) {
+      writeEmptyArray()
+      return;
+    }
+
+    if (this.startIndex >= valueArray.length) {
+      writeEmptyArray()
+      return;
+    }
+
+    const actualStop = this.endIndex >= valueArray.length ? valueArray.length - 1 : this.endIndex;
+
+    context.connection.write(RESPArray.encodeAsArray(valueArray.slice(this.startIndex, actualStop + 1)))
+  }
+}
+
+
 //
 //  RESP Decoder Erros
 //
 
-export enum RESPDecoderErrorType {
+export enum REPDecoderErrorType {
   EXPECTING_CRLF = 'expecting_CRLF',
   EXPECTING_INTEGER = 'expecting_integer',
   UNKNOWN_RESP_TYPE = 'unknown_resp_type',

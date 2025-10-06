@@ -1,5 +1,5 @@
 import { crlf } from "./util.ts";
-import { echoRESPCommand, getRESPCommand, pingRESPCommand, RESPArray, RESPBulkString, RESPCommandType, RESPDecoderError, RESPEmptyInputError, RESPExpectingIntegerError, RESPInteger, RESPObject, RESPSimpleString, RESPUnknownTypeError, rpushRESPCommand, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions } from "./objects.ts";
+import { echoRESPCommand, getRESPCommand, lrangeRESPCommand, pingRESPCommand, RESPArray, RESPBulkString, RESPCommandType, RESPDecoderError, RESPEmptyInputError, RESPExpectingIntegerError, RESPInteger, RESPObject, RESPSimpleString, RESPUnknownTypeError, rpushRESPCommand, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions } from "./objects.ts";
 import { RESPCommand } from "./objects.ts";
 
 export class RESPDecoder {
@@ -114,7 +114,20 @@ export class RESPDecoder {
               break;
             }
 
-            commands.push(new rpushRESPCommand(key, values.map(value => value.data)))
+            commands.push(new rpushRESPCommand(key, values.map(value => value.data)));
+            break;
+          }
+          case RESPCommandType.LRANGE: {
+            const [_, rawKey, rawStartIndex, rawEndIndex] = arrayData;
+            const key = rawKey?.data;
+            const startIndex = parseInt(rawStartIndex?.data);
+            const endIndex = parseInt(rawEndIndex?.data);
+
+            if (key === null || isNaN(startIndex) || isNaN(endIndex)) {
+              break;
+            }
+
+            commands.push(new lrangeRESPCommand(key, startIndex, endIndex));
             break;
           }
         }
