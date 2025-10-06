@@ -106,15 +106,15 @@ export class RESPDecoder {
             break
           }
           case RESPCommandType.RPUSH: {
-            const [_, rawKey, rawValue, rawOption, rawModifier] = arrayData;
+            const [_, rawKey] = arrayData;
             const key = rawKey?.data;
-            const value = rawValue?.data;
+            const values = arrayData.slice(2);
 
-            if (key === null || value === null) {
+            if (key === null || values === null) {
               break;
             }
 
-            commands.push(new rpushRESPCommand(key, value))
+            commands.push(new rpushRESPCommand(key, values.map(value => value.data)))
             break;
           }
         }

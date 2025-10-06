@@ -32,8 +32,8 @@ export class RESPSimpleString extends RESPObject<string> {
   constructor(data: string) {
     super(RESPObjectType.SIMPLE_STRING, data)
   }
-}
 
+}
 export class RESPBulkString extends RESPObject<string | null> {
   public static encodeAsBulkString(input: string) {
     if (input.length === 0) {
@@ -185,19 +185,19 @@ export class getRESPCommand extends RESPCommand {
 
 export class rpushRESPCommand extends RESPCommand {
   private key: string;
-  private value: any;
+  private values: string[];
 
-  constructor(_key: string, _value: string) {
+  constructor(_key: string, _value: string[]) {
     super(RESPCommandType.RPUSH);
     this.key = _key;
-    this.value = _value;
+    this.values = _value;
   }
 
   public execute(context: CommandContext): void {
     const entry = context.store.get(this.key);
     if (entry === undefined) {
-      context.store.set(this.key, [[this.value], undefined])
-      context.connection.write(RESPInteger.encodeAsInteger(1));
+      context.store.set(this.key, [this.values, undefined])
+      context.connection.write(RESPInteger.encodeAsInteger(this.values.length));
       return;
     }
 
@@ -205,7 +205,7 @@ export class rpushRESPCommand extends RESPCommand {
     if (Array.isArray(!existingList)) {
       return;
     }
-    const newList = [...existingList, this.value];
+    const newList = [...existingList, ...this.values];
     context.store.set(this.key, [newList, undefined])
     context.connection.write(RESPInteger.encodeAsInteger(newList.length));
   }

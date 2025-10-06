@@ -1,7 +1,7 @@
 import * as net from "net";
 import { RESPDecoder } from "./RESP/decoder.ts";
 
-const store = new Map<string, string>
+const store = new Map<string, [any, number | undefined]>
 
 const server: net.Server = net.createServer((socket: net.Socket) => {
   socket.on('data', (data) => {
