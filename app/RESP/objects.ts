@@ -40,8 +40,6 @@ export class RESPBulkString extends RESPObject<string | null> {
       return '$-1' + crlf;
     }
 
-    console.log(input);
-
     return '$' + input.length.toString() + crlf + input + crlf;
   }
 
@@ -63,7 +61,6 @@ export class RESPInteger extends RESPObject<number> {
 
 export class RESPArray extends RESPObject<RESPObject<any>[] | null> {
   public static encodeAsArray(input: string[]) {
-    console.log(input);
     return `*${input.length}${crlf}${input.map(val => RESPBulkString.encodeAsBulkString(val)).join('')}`;
   }
 
@@ -249,19 +246,22 @@ export class lrangeRESPCommand extends RESPCommand {
       return;
     }
 
-    if (this.startIndex > this.endIndex) {
+    const normalizedStartIndex = this.startIndex < 0 ? Math.max(valueArray.length + this.startIndex, 0) : this.startIndex;
+    const normalizedEndIndex = this.endIndex < 0 ? valueArray.length + this.endIndex : this.endIndex;
+
+    if (normalizedStartIndex > normalizedEndIndex) {
       writeEmptyArray()
       return;
     }
 
-    if (this.startIndex >= valueArray.length) {
+    if (normalizedStartIndex >= valueArray.length) {
       writeEmptyArray()
       return;
     }
 
-    const actualStop = this.endIndex >= valueArray.length ? valueArray.length - 1 : this.endIndex;
+    const actualStop = normalizedEndIndex >= valueArray.length ? valueArray.length - 1 : normalizedEndIndex;
 
-    context.connection.write(RESPArray.encodeAsArray(valueArray.slice(this.startIndex, actualStop + 1)))
+    context.connection.write(RESPArray.encodeAsArray(valueArray.slice(normalizedStartIndex, actualStop + 1)))
   }
 }
 
