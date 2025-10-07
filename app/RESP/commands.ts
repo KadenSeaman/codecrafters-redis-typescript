@@ -14,6 +14,7 @@ export enum RESPCommandType {
   RPUSH = 'rpush',
   LRANGE = 'lrange',
   LPUSH = 'lpush',
+  LLEN = 'llen',
 }
 
 export interface CommandContext {
@@ -225,5 +226,34 @@ export class lpushRESPCommand extends RESPCommand {
     console.log(newList)
     context.store.set(this.key, [newList, undefined])
     context.connection.write(RESPInteger.encodeAsInteger(newList.length));
+  }
+}
+
+
+export class llenRESPCommand extends RESPCommand {
+  private key: string;
+
+  constructor(_key: string) {
+    super(RESPCommandType.LLEN);
+    this.key = _key;
+  }
+
+  public execute(context: CommandContext): void {
+    const { connection, store } = context;
+
+    const result = store.get(this.key);
+    if (!result) {
+      connection.write(RESPInteger.encodeAsInteger(0));
+      return;
+    }
+
+    const [value, _] = result
+
+    if (value === undefined) {
+      connection.write(RESPInteger.encodeAsInteger(0));
+      return;
+    }
+
+    connection.write(RESPInteger.encodeAsInteger(value.length))
   }
 }

@@ -1,6 +1,6 @@
 import { crlf } from "./util.ts";
 import { RESPArray, RESPBulkString, RESPInteger, RESPObject, RESPSimpleString } from "./objects.ts";
-import { echoRESPCommand, getRESPCommand, lrangeRESPCommand, lpushRESPCommand, pingRESPCommand, rpushRESPCommand, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions, RESPCommand, RESPCommandType } from "./commands.ts";
+import { echoRESPCommand, getRESPCommand, lrangeRESPCommand, lpushRESPCommand, pingRESPCommand, rpushRESPCommand, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions, RESPCommand, RESPCommandType, llenRESPCommand } from "./commands.ts";
 import { RESPDecoderError, RESPUnknownTypeError, RESPExpectingIntegerError } from "./errors.ts";
 
 export class RESPDecoder {
@@ -142,6 +142,15 @@ export class RESPDecoder {
 
             commands.push(new lpushRESPCommand(key, values.map(value => value.data)));
             break;
+          }
+          case RESPCommandType.LLEN: {
+            const key = arrayData[1].data;
+
+            if (key === null) {
+              break;
+            }
+            commands.push(new llenRESPCommand(key))
+            break
           }
         }
       }
