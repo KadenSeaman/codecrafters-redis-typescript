@@ -13,6 +13,7 @@ export enum RESPCommandType {
   GET = 'get',
   RPUSH = 'rpush',
   LRANGE = 'lrange',
+  LPUSH = 'lpush',
 }
 
 export interface CommandContext {
@@ -198,4 +199,31 @@ export class lrangeRESPCommand extends RESPCommand {
   }
 }
 
+export class lpushRESPCommand extends RESPCommand {
+  private key: string;
+  private values: string[];
 
+  constructor(_key: string, _value: string[]) {
+    super(RESPCommandType.LPUSH);
+    this.key = _key;
+    this.values = _value.reverse();
+  }
+
+  public execute(context: CommandContext): void {
+    const entry = context.store.get(this.key);
+    if (entry === undefined) {
+      context.store.set(this.key, [this.values, undefined])
+      context.connection.write(RESPInteger.encodeAsInteger(this.values.length));
+      return;
+    }
+
+    const existingList = entry[0];
+    if (Array.isArray(!existingList)) {
+      return;
+    }
+    const newList = [...this.values, ...existingList];
+    console.log(newList)
+    context.store.set(this.key, [newList, undefined])
+    context.connection.write(RESPInteger.encodeAsInteger(newList.length));
+  }
+}
