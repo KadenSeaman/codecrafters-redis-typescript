@@ -260,11 +260,9 @@ export class llenRESPCommand extends RESPCommand {
 }
 
 export class lpopRESPCommand extends RESPCommand {
-  private key: string;
 
-  constructor(_key: string) {
+  constructor(private readonly key: string, private readonly amountOfElementsToRemove: number | undefined) {
     super(RESPCommandType.LPOP);
-    this.key = _key;
   }
 
   public execute(context: CommandContext): void {
@@ -281,10 +279,21 @@ export class lpopRESPCommand extends RESPCommand {
       return;
     }
 
+    if (this.amountOfElementsToRemove === undefined) {
+      const firstValue = result[0][0];
+      connection.write(RESPBulkString.encodeAsBulkString(firstValue));
+      store.set(this.key, [result[0].slice(1), result[1]])
+      return;
+    }
 
-    const firstValue = result[0][0];
+    if (this.amountOfElementsToRemove >= result[0].length) {
+      connection.write(RESPArray.encodeAsArray(result[0]));
+      store.delete(this.key);
+      return;
+    }
 
-    connection.write(RESPBulkString.encodeAsBulkString(firstValue));
-    store.set(this.key, [result[0].slice(1), result[1]])
+    const values = result[0].slice(0, this.amountOfElementsToRemove);
+    connection.write(RESPArray.encodeAsArray(values));
+    store.set(this.key, [result[0].slice(this.amountOfElementsToRemove), result[1]])
   }
 }

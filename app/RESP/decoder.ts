@@ -2,6 +2,7 @@ import { crlf } from "./util.ts";
 import { RESPArray, RESPBulkString, RESPInteger, RESPObject, RESPSimpleString } from "./objects.ts";
 import { echoRESPCommand, getRESPCommand, lrangeRESPCommand, lpushRESPCommand, pingRESPCommand, rpushRESPCommand, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions, RESPCommand, RESPCommandType, llenRESPCommand, lpopRESPCommand } from "./commands.ts";
 import { RESPDecoderError, RESPUnknownTypeError, RESPExpectingIntegerError } from "./errors.ts";
+import type { parse } from "path";
 
 export class RESPDecoder {
   private pos = 0;
@@ -153,13 +154,20 @@ export class RESPDecoder {
             break;
           }
           case RESPCommandType.LPOP: {
-            const key = arrayData[1].data;
+            const [_, rawKey, rawNumElementsToRemove] = arrayData;
+
+
+            const key = rawKey?.data;
+            const numElementsToRemove = rawNumElementsToRemove?.data
 
             if (key === null) {
               break;
             }
 
-            commands.push(new lpopRESPCommand(key))
+            console.log(key);
+            console.log(numElementsToRemove)
+
+            commands.push(new lpopRESPCommand(key, numElementsToRemove))
             break;
           }
         }
