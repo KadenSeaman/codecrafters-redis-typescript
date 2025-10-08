@@ -15,6 +15,7 @@ export enum RESPCommandType {
   LRANGE = 'lrange',
   LPUSH = 'lpush',
   LLEN = 'llen',
+  LPOP = 'lpop',
 }
 
 export interface CommandContext {
@@ -255,5 +256,35 @@ export class llenRESPCommand extends RESPCommand {
     }
 
     connection.write(RESPInteger.encodeAsInteger(value.length))
+  }
+}
+
+export class lpopRESPCommand extends RESPCommand {
+  private key: string;
+
+  constructor(_key: string) {
+    super(RESPCommandType.LPOP);
+    this.key = _key;
+  }
+
+  public execute(context: CommandContext): void {
+    const { connection, store } = context;
+
+    const result = store.get(this.key);
+    if (!result) {
+      connection.write(RESPBulkString.encodeAsBulkString(''));
+      return;
+    }
+
+    if (result[0].length === 0) {
+      connection.write(RESPBulkString.encodeAsBulkString(''));
+      return;
+    }
+
+
+    const firstValue = result[0][0];
+
+    connection.write(RESPBulkString.encodeAsBulkString(firstValue));
+    store.set(this.key, [result[0].slice(1), result[1]])
   }
 }
