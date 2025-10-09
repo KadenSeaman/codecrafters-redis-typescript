@@ -21,8 +21,8 @@ export class RESPSimpleString extends RESPObject<string> {
   constructor(data: string) {
     super(RESPObjectType.SIMPLE_STRING, data)
   }
-
 }
+
 export class RESPBulkString extends RESPObject<string | null> {
   public static encodeAsBulkString(input: string) {
     if (input.length === 0) {

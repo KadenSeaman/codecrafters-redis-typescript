@@ -1,6 +1,15 @@
 import { crlf } from "./util.ts";
 import { RESPArray, RESPBulkString, RESPInteger, RESPObject, RESPSimpleString } from "./objects.ts";
-import { echoRESPCommand, getRESPCommand, lrangeRESPCommand, lpushRESPCommand, pingRESPCommand, rpushRESPCommand, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions, RESPCommand, RESPCommandType, llenRESPCommand, lpopRESPCommand } from "./commands.ts";
+import { echoRESPCommand } from "./respcommands/echorespcommand.ts";
+import { getRESPCommand } from "./respcommands/getrespcommand.ts";
+import { lrangeRESPCommand } from "./respcommands/lrangerespcommand.ts";
+import { lpushRESPCommand } from "./respcommands/lpushrespcommand.ts";
+import { pingRESPCommand } from "./respcommands/pingrespcommand.ts";
+import { rpushRESPCommand } from "./respcommands/rpushrespcommand.ts";
+import { setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions } from "./respcommands/setrespcommand.ts";
+import { llenRESPCommand } from "./respcommands/llenrespcommand.ts";
+import { lpopRESPCommand } from "./respcommands/lpoprespcommand.ts";
+import { RESPCommand, RESPCommandType } from "./respcommands/commands.ts";
 import { RESPDecoderError, RESPUnknownTypeError, RESPExpectingIntegerError } from "./errors.ts";
 
 export class RESPDecoder {
