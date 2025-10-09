@@ -1,9 +1,5 @@
 import { crlf } from "./util";
 
-//
-//  RESP Object Types
-//
-
 export enum RESPObjectType {
   SIMPLE_STRING = 'simple_string',
   BULK_STRING = 'bulk_string',
@@ -14,13 +10,7 @@ export enum RESPObjectType {
 }
 
 export abstract class RESPObject<T> {
-  public type: RESPObjectType;
-  public data: T;
-
-  constructor(type: RESPObjectType, data: T) {
-    this.type = type;
-    this.data = data;
-  }
+  constructor(public readonly type: RESPObjectType, public readonly data: T) { }
 }
 
 export class RESPSimpleString extends RESPObject<string> {
@@ -52,7 +42,6 @@ export class RESPInteger extends RESPObject<number> {
     return `:${input}${crlf}`
   }
 
-
   constructor(data: number) {
     super(RESPObjectType.INTEGER, data)
   }
@@ -65,7 +54,6 @@ export class RESPArray extends RESPObject<RESPObject<any>[] | null> {
 
   constructor(data: RESPObject<any>[] | null) {
     super(RESPObjectType.ARRAY, data);
-    this.data = data;
   }
 }
 

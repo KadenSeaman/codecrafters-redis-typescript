@@ -2,7 +2,6 @@ import { crlf } from "./util.ts";
 import { RESPArray, RESPBulkString, RESPInteger, RESPObject, RESPSimpleString } from "./objects.ts";
 import { echoRESPCommand, getRESPCommand, lrangeRESPCommand, lpushRESPCommand, pingRESPCommand, rpushRESPCommand, setRESPCommand, setRespCommandOptionsEnum, type setRespCommandOptions, RESPCommand, RESPCommandType, llenRESPCommand, lpopRESPCommand } from "./commands.ts";
 import { RESPDecoderError, RESPUnknownTypeError, RESPExpectingIntegerError } from "./errors.ts";
-import type { parse } from "path";
 
 export class RESPDecoder {
   private pos = 0;
@@ -19,10 +18,6 @@ export class RESPDecoder {
     const str = this.data.slice(this.pos, this.pos + offset);
     this.pos += offset;
     return str;
-  }
-
-  private peek(): string {
-    return this.data[this.pos];
   }
 
   private advanceCRLF(): string {
