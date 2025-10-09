@@ -180,9 +180,6 @@ export class RESPDecoder {
             commands.push(new lpopRESPCommand(key, numElementsToRemove))
             break;
           }
-          case RESPCommandType.BLPOP: {
-            const [_, rawKey, rawTimeoutSeconds] = 
-          }
         }
       }
     }
