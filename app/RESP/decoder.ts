@@ -92,10 +92,20 @@ export class RESPDecoder {
 
             const setOptions: setRespCommandOptions = {};
 
-            if (option === setRespCommandOptionsEnum.PX) {
-              const msDelay = parseInt(rawModifier?.data);
-              if (!isNaN(msDelay)) {
-                setOptions.expiry = Date.now() + msDelay;
+            switch (option) {
+              case setRespCommandOptionsEnum.PX: {
+                const msDelay = parseInt(rawModifier?.data);
+                if (!isNaN(msDelay)) {
+                  setOptions.expiry = Date.now() + msDelay;
+                }
+                break;
+              }
+              case setRespCommandOptionsEnum.EX: {
+                const msDelay = parseInt(rawModifier?.data) * 1000;
+                if (!isNaN(msDelay)) {
+                  setOptions.expiry = Date.now() + msDelay;
+                }
+                break;
               }
             }
 
@@ -160,7 +170,6 @@ export class RESPDecoder {
           case RESPCommandType.LPOP: {
             const [_, rawKey, rawNumElementsToRemove] = arrayData;
 
-
             const key = rawKey?.data;
             const numElementsToRemove = rawNumElementsToRemove?.data
 
@@ -168,11 +177,11 @@ export class RESPDecoder {
               break;
             }
 
-            console.log(key);
-            console.log(numElementsToRemove)
-
             commands.push(new lpopRESPCommand(key, numElementsToRemove))
             break;
+          }
+          case RESPCommandType.BLPOP: {
+            const [_, rawKey, rawTimeoutSeconds] = 
           }
         }
       }

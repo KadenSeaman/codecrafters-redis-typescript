@@ -16,6 +16,7 @@ export enum RESPCommandType {
   LPUSH = 'lpush',
   LLEN = 'llen',
   LPOP = 'lpop',
+  BLPOP = 'blpop',
 }
 
 export abstract class RESPCommand {

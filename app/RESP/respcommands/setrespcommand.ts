@@ -7,6 +7,7 @@ export type setRespCommandOptions = {
 
 export enum setRespCommandOptionsEnum {
   PX = 'px',
+  EX = 'ex',
 }
 
 export class setRESPCommand extends RESPCommand {
